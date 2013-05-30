@@ -24,8 +24,8 @@
 #include <iostream>
 
 // Qt
-#include <QtGui/QAction>
-#include <QtGui/QApplication>
+#include <QAction>
+#include <QGuiApplication>
 #include <QtGui/QClipboard>
 #include <QtCore/QString>
 #include <QtCore/QTextStream>
@@ -449,7 +449,7 @@ void UrlFilter::HotSpot::activate(QObject* object)
 
     if ( actionName == "copy-action" )
     {
-        QApplication::clipboard()->setText(url);
+        QGuiApplication::clipboard()->setText(url);
         return;
     }
 

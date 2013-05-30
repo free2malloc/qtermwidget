@@ -17,9 +17,9 @@
 */
 
 #include <QLayout>
-#include <QtGui/qboxlayout.h>
-#include <QtGui/qlayoutitem.h>
-#include <QtGui/qsizepolicy.h>
+#include <QBoxLayout>
+#include <QLayoutItem>
+#include <QSizePolicy>
 #include "SearchBar.h"
 #include "qtermwidget.h"
 #include "ColorTables.h"
@@ -28,6 +28,7 @@
 #include "Screen.h"
 #include "ScreenWindow.h"
 #include "Emulation.h"
+#include "History.h"
 #include "TerminalDisplay.h"
 #include "KeyboardTranslator.h"
 #include "ColorScheme.h"
@@ -75,7 +76,6 @@ Session *TermWidgetImpl::createSession()
     //session->setProgram("/bin/bash");
 
     session->setProgram(getenv("SHELL"));
-
 
 
     QStringList args("");
@@ -262,7 +262,6 @@ void QTermWidget::init(int startnow)
             this, SIGNAL(termLostFocus()));
     connect(m_impl->m_terminalDisplay, SIGNAL(keyPressedSignal(QKeyEvent *)),
             this, SIGNAL(termKeyPressed(QKeyEvent *)));
-//    m_impl->m_terminalDisplay->setSize(80, 40);
 
     QFont font = QApplication::font();
     font.setFamily("Monospace");
@@ -274,7 +273,7 @@ void QTermWidget::init(int startnow)
     setScrollBarPosition(NoScrollBar);
 
     m_impl->m_session->addView(m_impl->m_terminalDisplay);
-
+    connect( m_impl->m_terminalDisplay, SIGNAL(updated(QRect)), this, SIGNAL(updated(QRect)) );
     connect(m_impl->m_session, SIGNAL(finished()), this, SLOT(sessionFinished()));
 }
 
@@ -314,11 +313,25 @@ void QTermWidget::setShellProgram(const QString &progname)
     m_impl->m_session->setProgram(progname);
 }
 
+QString QTermWidget::getShellProgram()
+{
+    if (!m_impl->m_session)
+        return QString();
+    return m_impl->m_session->program();
+}
+
 void QTermWidget::setWorkingDirectory(const QString& dir)
 {
     if (!m_impl->m_session)
         return;
     m_impl->m_session->setInitialWorkingDirectory(dir);
+}
+
+QString QTermWidget::getWorkingDirectory()
+{
+    if (!m_impl->m_session)
+        return QString();
+    return m_impl->m_session->initialWorkingDirectory();
 }
 
 void QTermWidget::setArgs(QStringList &args)
@@ -328,11 +341,33 @@ void QTermWidget::setArgs(QStringList &args)
     m_impl->m_session->setArguments(args);
 }
 
+QStringList QTermWidget::getArgs()
+{
+    if (!m_impl->m_session)
+        return QStringList();
+    return m_impl->m_session->arguments();
+}
+
 void QTermWidget::setTextCodec(QTextCodec *codec)
 {
     if (!m_impl->m_session)
         return;
     m_impl->m_session->setCodec(codec);
+}
+
+void QTermWidget::setTextCodec(QString codecName)
+{
+    if (!m_impl->m_session)
+        return;
+    QTextCodec *codec = QTextCodec::codecForName(codecName.toStdString().c_str());
+    m_impl->m_session->setCodec(codec);
+}
+
+QString QTermWidget::getTextCodec()
+{
+    if (!m_impl->m_session)
+        return QString();
+    return m_impl->m_session->codec();
 }
 
 void QTermWidget::setColorScheme(const QString & name)
@@ -371,6 +406,34 @@ void QTermWidget::setSize(int h, int v)
     m_impl->m_terminalDisplay->setSize(h, v);
 }
 
+int QTermWidget::columns()
+{
+    if (!m_impl->m_terminalDisplay)
+        return 0;
+    return m_impl->m_terminalDisplay->columns();
+}
+
+int QTermWidget::rows()
+{
+    if (!m_impl->m_terminalDisplay)
+        return 0;
+    return m_impl->m_terminalDisplay->lines();
+}
+
+void QTermWidget::setTerminalSizeHint(bool onoff)
+{
+    if (!m_impl->m_terminalDisplay)
+        return;
+    m_impl->m_terminalDisplay->setTerminalSizeHint(onoff);
+}
+
+bool QTermWidget::terminalSizeHint()
+{
+    if (!m_impl->m_terminalDisplay)
+        return false;
+    return m_impl->m_terminalDisplay->terminalSizeHint();
+}
+
 void QTermWidget::setHistorySize(int lines)
 {
     if (lines < 0)
@@ -379,11 +442,30 @@ void QTermWidget::setHistorySize(int lines)
         m_impl->m_session->setHistoryType(HistoryTypeBuffer(lines));
 }
 
+int QTermWidget::getHistorySize()
+{
+    if (!m_impl->m_session)
+        return 0;
+
+    if( m_impl->m_session->historyType().isUnlimited() )
+        return -1;
+    if( ! m_impl->m_session->historyType().isEnabled() )
+        return 0;
+    return m_impl->m_session->historyType().maximumLineCount();
+}
+
 void QTermWidget::setScrollBarPosition(ScrollBarPosition pos)
 {
     if (!m_impl->m_terminalDisplay)
         return;
     m_impl->m_terminalDisplay->setScrollBarPosition((TerminalDisplay::ScrollBarPosition)pos);
+}
+
+QTermWidget::ScrollBarPosition QTermWidget::getScrollBarPosition()
+{
+    if (!m_impl->m_terminalDisplay)
+        return QTermWidget::ScrollBarRight;
+    return (QTermWidget::ScrollBarPosition)m_impl->m_terminalDisplay->scrollBarPosition();
 }
 
 void QTermWidget::scrollToEnd()
@@ -396,6 +478,17 @@ void QTermWidget::scrollToEnd()
 void QTermWidget::sendText(QString &text)
 {
     m_impl->m_session->sendText(text);
+}
+
+void QTermWidget::sendKey(QKeyEvent *event)
+{
+    m_impl->m_terminalDisplay->sendKeyEvent(event);
+    //m_impl->m_session->sendKey(event);
+}
+
+void QTermWidget::focus(bool toggle)
+{
+    m_impl->m_terminalDisplay->focus(toggle);
 }
 
 void QTermWidget::resizeEvent(QResizeEvent*)
@@ -495,6 +588,11 @@ void QTermWidget::setFlowControlWarningEnabled(bool enabled)
 void QTermWidget::setEnvironment(const QStringList& environment)
 {
     m_impl->m_session->setEnvironment(environment);
+}
+
+QStringList QTermWidget::getEnvironment()
+{
+    return m_impl->m_session->environment();
 }
 
 void QTermWidget::setMotionAfterPasting(int action)

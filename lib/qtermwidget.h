@@ -21,6 +21,7 @@
 #define _Q_TERM_WIDGET
 
 #include <QtGui>
+#include <QtWidgets>
 
 struct TermWidgetImpl;
 class SearchBar;
@@ -30,14 +31,14 @@ class QTermWidget : public QWidget {
     Q_OBJECT
 public:
 
-    enum ScrollBarPosition {
+    typedef enum {
         /** Do not show the scroll bar. */
         NoScrollBar=0,
         /** Show the scroll bar on the left side of the display. */
         ScrollBarLeft=1,
         /** Show the scroll bar on the right side of the display. */
         ScrollBarRight=2
-    };
+    } ScrollBarPosition;
 
     //Creation of widget
     QTermWidget(int startnow, // 1 = start shell programm immediatelly
@@ -65,41 +66,58 @@ public:
     // otherwise symbols' position could be incorrect
     void setTerminalFont(QFont & font);
     QFont getTerminalFont();
+
     void setTerminalOpacity(qreal level);
 
     //environment
     void setEnvironment(const QStringList & environment);
+    QStringList getEnvironment();
 
     //  Shell program, default is /bin/bash
     void setShellProgram(const QString & progname);
+    QString getShellProgram();
 
     //working directory
     void setWorkingDirectory(const QString & dir);
+    QString getWorkingDirectory();
 
     // Shell program args, default is none
     void setArgs(QStringList & args);
+    QStringList getArgs();
 
     //Text codec, default is UTF-8
-    void setTextCodec(QTextCodec * codec);
+    void setTextCodec(QTextCodec *codec);
+    void setTextCodec(QString codecName);
+    QString getTextCodec();
 
     //Color scheme, default is white on black
     void setColorScheme(const QString & name);
+
     static QStringList availableColorSchemes();
 
-    //set size
+    //set size (actually, columns and rows)
     void setSize(int h, int v);
+    int rows();
+    int columns();
+
+    // basically a popup window
+    void setTerminalSizeHint(bool onoff);
+    bool terminalSizeHint();
 
     // History size for scrolling
     void setHistorySize(int lines); //infinite if lines < 0
+    int getHistorySize();
 
     // Presence of scrollbar
     void setScrollBarPosition(ScrollBarPosition);
+    ScrollBarPosition getScrollBarPosition();
 
     // Wrapped, scroll to end.
     void scrollToEnd();
 
     // Send some text to terminal
     void sendText(QString & text);
+    void sendKey(QKeyEvent *event);
 
     // Sets whether flow control is enabled
     void setFlowControlEnabled(bool enabled);
@@ -130,6 +148,20 @@ signals:
     void termLostFocus();
 
     void termKeyPressed(QKeyEvent *);
+    void updated(QRect);
+
+    void scrollBarPositionChanged();
+    void keyBindingsChanged();
+    void flowControlChanged();
+    void fontChanged();
+    void environmentChanged();
+    void shellProgramChanged();
+    void workingDirectoryChanged();
+    void argsChanged();
+    void textCodecChanged();
+    void colorSchemeChanged();
+    void sizeChanged();
+    void historySizeChanged();
 
 public slots:
     // Copy selection to clipboard
@@ -154,6 +186,10 @@ public slots:
     void clear();
 
     void toggleShowSearchBar();
+
+    /*! Take or surrender focus
+     */
+    void focus(bool toggle);
 
 protected:
     virtual void resizeEvent(QResizeEvent *);

@@ -310,6 +310,7 @@ public:
      * Sends @p text to the current foreground terminal program.
      */
     void sendText(const QString & text) const;
+    void sendKey(const QKeyEvent *key) const;
 
     /**
      * Returns the process id of the terminal process.
@@ -336,6 +337,7 @@ public:
 
     /** Sets the text codec used by this session's terminal emulation. */
     void setCodec(QTextCodec * codec);
+    QString codec();
 
     /**
      * Sets whether the session has a dark background or not.  The session

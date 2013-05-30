@@ -24,7 +24,7 @@
 // Qt
 #include <QtGui/QColor>
 #include <QtCore/QPointer>
-#include <QtGui/QWidget>
+#include <QWidget>
 
 // Konsole
 #include "Filter.h"
@@ -119,6 +119,7 @@ public:
      * is shown on the left or right side of the display.
      */
     void setScrollBarPosition(ScrollBarPosition position);
+    ScrollBarPosition scrollBarPosition();
 
     /** 
      * Sets the current position and range of the display's scroll bar.
@@ -285,7 +286,7 @@ public:
 
     void setSize(int cols, int lins);
     void setFixedSize(int cols, int lins);
-    
+
     // reimplemented
     QSize sizeHint() const;
 
@@ -516,6 +517,10 @@ public slots:
     
     void selectionChanged();
 
+    void focus(bool toggle);
+
+    void sendKeyEvent(QKeyEvent *ev) { keyPressEvent(ev); }
+
 signals:
 
     /**
@@ -560,6 +565,7 @@ signals:
 	void copyAvailable(bool);
 	void termGetFocus();
 	void termLostFocus();
+    void updated(QRect region);
 
 protected:
     virtual bool event( QEvent * );

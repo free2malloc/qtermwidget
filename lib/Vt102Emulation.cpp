@@ -973,7 +973,7 @@ void Vt102Emulation::sendKeyEvent( QKeyEvent* event )
                                          "into characters to send to the terminal " 
                                          "is missing.");
         reset();
-        receiveData( translatorError.toAscii().constData() , translatorError.count() );
+        receiveData( translatorError.toLocal8Bit().constData() , translatorError.count() );
     }
 }
 

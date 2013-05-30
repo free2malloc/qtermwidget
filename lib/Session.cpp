@@ -30,7 +30,7 @@
 #include <stdlib.h>
 
 // Qt
-#include <QtGui/QApplication>
+#include <QGuiApplication>
 #include <QtCore/QByteRef>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -160,6 +160,11 @@ bool Session::isRunning() const
 void Session::setCodec(QTextCodec * codec)
 {
     emulation()->setCodec(codec);
+}
+
+QString Session::codec()
+{
+    return emulation()->codec()->name();
 }
 
 void Session::setProgram(const QString & program)
@@ -459,7 +464,7 @@ void Session::activityStateSet(int state)
 {
     if (state==NOTIFYBELL) {
         QString s;
-        s.sprintf("Bell in session '%s'",_nameTitle.toAscii().data());
+        s.sprintf("Bell in session '%s'",_nameTitle.toLocal8Bit().data());
 
         emit bellRequest( s );
     } else if (state==NOTIFYACTIVITY) {
@@ -577,6 +582,11 @@ void Session::sendText(const QString & text) const
     _emulation->sendText(text);
 }
 
+void Session::sendKey(const QKeyEvent *key) const
+{
+    _emulation->sendKeyEvent(key);
+}
+
 Session::~Session()
 {
     delete _emulation;
@@ -607,16 +617,16 @@ void Session::done(int exitStatus)
 
         if (_shellProcess->exitStatus() == QProcess::NormalExit) {
             message.sprintf("Session '%s' exited with status %d.",
-                          _nameTitle.toAscii().data(), exitStatus);
+                          _nameTitle.toLocal8Bit().data(), exitStatus);
         } else {
             message.sprintf("Session '%s' crashed.",
-                          _nameTitle.toAscii().data());
+                          _nameTitle.toLocal8Bit().data());
         }
     }
 
     if ( !_wantedClose && _shellProcess->exitStatus() != QProcess::NormalExit )
         message.sprintf("Session '%s' exited unexpectedly.",
-                        _nameTitle.toAscii().data());
+                        _nameTitle.toLocal8Bit().data());
     else
         emit finished();
 

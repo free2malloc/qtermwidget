@@ -1,7 +1,6 @@
 Requirements:
     
     Qt4
-    cmake
 
 Supported (tested) platforms:
     
@@ -15,9 +14,9 @@ Build:
     http://www.cmake.org/Wiki/CMake_FAQ#Out-of-source_build_trees
     
     1) cd builddir
-    2) cmake path/to/sourcetree
+    2) qmake path/to/sourcetree
     3) make
     4) optional: make install
     
-    Read cmake docs to fine tune the build process (CMAKE_INSTALL_PREFIX...)
+    Read qmake docs to fine tune the build process (CONFIG, QT...)
 

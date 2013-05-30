@@ -24,23 +24,25 @@
 #include "TerminalDisplay.h"
 
 // Qt
-#include <QtGui/QApplication>
-#include <QtGui/QBoxLayout>
-#include <QtGui/QClipboard>
-#include <QtGui/QKeyEvent>
-#include <QtCore/QEvent>
-#include <QtCore/QTime>
-#include <QtCore/QFile>
-#include <QtGui/QGridLayout>
-#include <QtGui/QLabel>
-#include <QtGui/QLayout>
-#include <QtGui/QPainter>
-#include <QtGui/QPixmap>
-#include <QtGui/QScrollBar>
-#include <QtGui/QStyle>
-#include <QtCore/QTimer>
-#include <QtGui/QToolTip>
-#include <QtDebug>
+#include <QApplication>
+#include <QBoxLayout>
+#include <QClipboard>
+#include <QKeyEvent>
+#include <QEvent>
+#include <QTime>
+#include <QFile>
+#include <QGridLayout>
+#include <QLabel>
+#include <QLayout>
+#include <QPainter>
+#include <QPixmap>
+#include <QScrollBar>
+#include <QStyle>
+#include <QTimer>
+#include <QToolTip>
+#include <QMimeData>
+#include <QDrag>
+#include <QDebug>
 #include <QUrl>
 
 // KDE
@@ -890,6 +892,8 @@ void TerminalDisplay::scrollImage(int lines , const QRect& screenWindowRegion)
 
     //scroll the display vertically to match internal _image
     scroll( 0 , _fontHeight * (-lines) , scrollRect );
+
+    emit updated(scrollRect);
 }
 
 QRegion TerminalDisplay::hotSpotRegion() const 
@@ -1129,6 +1133,9 @@ void TerminalDisplay::updateImage()
 
   // update the parts of the display which have changed
   update(dirtyRegion);
+
+  foreach( QRect rect, dirtyRegion.rects() )
+    emit updated( rect );
 
   if ( _hasBlinker && !_blinkTimer->isActive()) _blinkTimer->start( TEXT_BLINK_DELAY ); 
   if (!_hasBlinker && _blinkTimer->isActive()) { _blinkTimer->stop(); _blinking = false; }
@@ -1577,7 +1584,7 @@ void TerminalDisplay::blinkCursorEvent()
 
 void TerminalDisplay::resizeEvent(QResizeEvent*)
 {
-  updateImageSize();
+    updateImageSize();
 }
 
 void TerminalDisplay::propagateSize()
@@ -1625,6 +1632,7 @@ void TerminalDisplay::updateImageSize()
   {
       showResizeNotification();
     emit changedContentSizeSignal(_contentHeight, _contentWidth); // expose resizeEvent
+    emit updated( QRect(0, 0, _contentWidth, _contentHeight) );
   }
   
   _resizing = false;
@@ -1714,6 +1722,11 @@ void TerminalDisplay::setScrollBarPosition(ScrollBarPosition position)
   
   propagateSize();
   update();
+}
+
+TerminalDisplay::ScrollBarPosition TerminalDisplay::scrollBarPosition()
+{
+    return _scrollbarLocation;
 }
 
 void TerminalDisplay::mousePressEvent(QMouseEvent* ev)
@@ -2769,6 +2782,22 @@ void TerminalDisplay::bell(const QString& message)
 void TerminalDisplay::selectionChanged()
 {
     emit copyAvailable(_screenWindow->selectedText(false).isEmpty() == false);
+}
+
+void TerminalDisplay::focus(bool toggle)
+{
+    if( toggle )
+    {
+        QWidget::setFocus();
+        QFocusEvent event = QFocusEvent(QEvent::FocusIn);
+        focusInEvent(&event);
+    }
+    else
+    {
+        QWidget::clearFocus();
+        QFocusEvent event = QFocusEvent(QEvent::FocusOut);
+        focusOutEvent(&event);
+    }
 }
 
 void TerminalDisplay::swapColorTable()

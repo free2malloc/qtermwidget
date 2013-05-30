@@ -233,7 +233,7 @@ public slots:
    * Interprets a key press event and emits the sendData() signal with
    * the resulting character stream. 
    */
-  virtual void sendKeyEvent(QKeyEvent*);
+  virtual void sendKeyEvent(const QKeyEvent *);
  
   /** 
    * Converts information about a mouse event into an xterm-compatible escape

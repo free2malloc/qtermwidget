@@ -29,7 +29,7 @@
 #include <unistd.h>
 
 // Qt
-#include <QtGui/QApplication>
+#include <QGuiApplication>
 #include <QtGui/QClipboard>
 #include <QtCore/QHash>
 #include <QtGui/QKeyEvent>
@@ -188,15 +188,20 @@ void Emulation::receiveChar(int c)
   };
 }
 
-void Emulation::sendKeyEvent( QKeyEvent* ev )
+void Emulation::sendKeyEvent( const QKeyEvent* ev )
 {
   emit stateSet(NOTIFYNORMAL);
   
-  if (!ev->text().isEmpty())
+  if (!ev->text().isEmpty() && ev->type() == QKeyEvent::KeyPress)
   { // A block of text
     // Note that the text is proper unicode.
     // We should do a conversion here
     emit sendData(ev->text().toUtf8(),ev->text().length());
+  }
+  else if( ev->text().isEmpty() )
+  {
+    int cbuf[2] = { ev->key(), 0 };
+    emit sendData((char*)&cbuf, 4);
   }
 }
 
